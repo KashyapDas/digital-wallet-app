@@ -2,9 +2,10 @@ const express = require("express");
 const router = express.Router();
 const {userSchema, signinSchema, emailUpdater, passwordUpdater} = require("../zodChecks/userZod")
 const {userMiddleware, signinMiddleware} = require("../Middleware/userMiddleware");
-const {userModel} = require("../Database/mongoose");
+const {userModel, accountModel} = require("../Database/mongoose");
 const jwt_secret = require("../Auth/jwtSecret");
 const jwt = require("jsonwebtoken");
+
 
 // This is the signup route where all the signup logic will handle 
 router.post("/signup",userMiddleware, async (req,res)=>{
@@ -27,9 +28,16 @@ router.post("/signup",userMiddleware, async (req,res)=>{
     })
     // create a jwt token for the user
     const userId = newUser._id; 
+
+    await accountModel.create({
+        userId,
+        balance: 1+Math.random()*1000
+    })
+
     const token = jwt.sign({
         userId
     },jwt_secret);
+
     // pass the token in the response set
     res.json({
         msg:"Account created successfully...",
@@ -53,8 +61,7 @@ router.post("/signin",signinMiddleware,(req,res)=>{
     const token = jwt.sign({
         userId
     },jwt_secret);
-
-
+    
     res.json({
         msg:"Navigate to the dashboard page",
         token
@@ -115,6 +122,25 @@ router.get("/getAllUsers",async (req,res)=>{
         msg:"Users Found ",
         list : usernameExist
     })
+})
+
+router.post("/authRoute",async (req,res)=>{
+    try{
+        const authToken = req.headers.authorization;
+        console.log(authToken);
+        const checkAuth = jwt.verify(authToken,jwt_secret);
+        console.log(checkAuth);  
+        res.json({
+            msg:"User exists",
+            prevent: false
+        })
+    }catch(err){
+        res.json({
+            msg:"User not exist",
+            prevent: true
+        })
+    }
+    
 })
 
 module.exports = router
