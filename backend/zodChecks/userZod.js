@@ -14,7 +14,13 @@ const signinSchema = zod.object({
     password : zod.string(),
 })
 
+const emailUpdater = zod.string().email();
+const passwordUpdater = zod.string();
+
+
 module.exports = {
     userSchema,
-    signinSchema
+    signinSchema,
+    emailUpdater,
+    passwordUpdater
 };

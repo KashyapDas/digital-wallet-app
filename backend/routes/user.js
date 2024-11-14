@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {userSchema, signinSchema} = require("../zodChecks/userZod")
+const {userSchema, signinSchema, emailUpdater, passwordUpdater} = require("../zodChecks/userZod")
 const {userMiddleware, signinMiddleware} = require("../Middleware/userMiddleware");
 const {userModel} = require("../Database/mongoose");
 const jwt_secret = require("../Auth/jwtSecret");
@@ -61,9 +61,39 @@ router.post("/signin",signinMiddleware,(req,res)=>{
     })
 })
 
-// This is the user Dashboard which can diplay the user balance and allow to search a specfic user 
-router.get("/dashboard",(req,res)=>{
+// This will allow us to update the password using the email you link with account
+router.put("/forgotPassword", async (req,res)=>{
+
+    const emailSchema = emailUpdater.safeParse(req.headers.email);
+    const passwordSchema = passwordUpdater.safeParse(req.headers.password);
+
+    if((!emailSchema.success) || (!passwordSchema.success))
+    {
+        return res.status(500).json({
+            msg:"Invalid Inputs"
+        })
+    }
+
+    const email = req.headers.email;
+    const newPassword = req.headers.password;
     
+    const emailExist = await userModel.findOneAndUpdate({
+        email : email
+    },{
+        password : newPassword
+    })
+    
+    if(!emailExist)
+    {
+        return res.status(500).json({
+            msg:"Email not found"
+        })
+    }
+    res.json({
+        msg:"Password updated...",
+        password:`Your new password is ${emailExist.password} `
+    })
+
 })
 
 // This is allow the feature of filtering the user based on their username  
