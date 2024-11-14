@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const userSchema = require("../zodChecks/userZod")
-const userMiddleware = require("../Middleware/userMiddleware");
+const {userSchema, signinSchema} = require("../zodChecks/userZod")
+const {userMiddleware, signinMiddleware} = require("../Middleware/userMiddleware");
 const {userModel} = require("../Database/mongoose");
 const jwt_secret = require("../Auth/jwtSecret");
 const jwt = require("jsonwebtoken");
@@ -37,9 +37,28 @@ router.post("/signup",userMiddleware, async (req,res)=>{
     })
 })
 
+
+
 // This is the signin route where all the signin logic will handle
-router.post("/signin",(req,res)=>{
-    
+router.post("/signin",signinMiddleware,(req,res)=>{
+    const {success} = signinSchema.safeParse(req.body);
+    if(!success)
+        {
+            res.status(200).json({
+                msg:"Invalid Inputs..."
+            })  
+        } 
+    // If exixts that means create a jwt token and pass it as a response and navigate it to the dashboard
+    const userId = req.userId;
+    const token = jwt.sign({
+        userId
+    },jwt_secret);
+
+
+    res.json({
+        msg:"Navigate to the dashboard page",
+        token
+    })
 })
 
 // This is the user Dashboard which can diplay the user balance and allow to search a specfic user 

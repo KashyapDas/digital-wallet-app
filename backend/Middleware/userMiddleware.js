@@ -23,4 +23,23 @@ const userMiddleware = async (req,res,next)=>{
     next();
 }
 
-module.exports = userMiddleware;
+const signinMiddleware = async (req,res,next)=>{
+    const {username, password } = req.body;
+    const userExist = await userModel.findOne({
+        username,
+        password
+    });
+    if(!userExist)
+    {
+        return res.status(403).json({
+            msg:"User does't exists...Create one"
+        })
+    }
+    req.userId = userExist._id;
+    next();
+}
+
+module.exports = {
+    userMiddleware,
+    signinMiddleware
+};
