@@ -64,6 +64,7 @@ router.post("/signin",signinMiddleware,(req,res)=>{
 // This will allow us to update the password using the email you link with account
 router.put("/forgotPassword", async (req,res)=>{
 
+    // Check the schema for the updater 
     const emailSchema = emailUpdater.safeParse(req.headers.email);
     const passwordSchema = passwordUpdater.safeParse(req.headers.password);
 
@@ -74,21 +75,23 @@ router.put("/forgotPassword", async (req,res)=>{
         })
     }
 
+    // get the data from the headers if the schema doesn't goes down
     const email = req.headers.email;
     const newPassword = req.headers.password;
-    
+    // find the email and update the password if the email get found
     const emailExist = await userModel.findOneAndUpdate({
         email : email
     },{
         password : newPassword
     })
-    
+    // if email not found run the following if condition
     if(!emailExist)
     {
         return res.status(500).json({
             msg:"Email not found"
         })
     }
+    // Return the response if the if condition was not run. Also show the new password of the user.
     res.json({
         msg:"Password updated...",
         password:`Your new password is ${emailExist.password} `
@@ -97,8 +100,21 @@ router.put("/forgotPassword", async (req,res)=>{
 })
 
 // This is allow the feature of filtering the user based on their username  
-router.get("/getAllUsers",(req,res)=>{
-    
+router.get("/getAllUsers",async (req,res)=>{
+    // search was based on the username
+    const filterUsername = req.query.filter || "";
+
+    // Display all those user which contain the letters of filterUSername
+    const usernameExist = await userModel.find({
+        username : {
+            $regex : filterUsername
+        }
+    })
+    // Return all the user that exist with the search query
+    res.json({
+        msg:"Users Found ",
+        list : usernameExist
+    })
 })
 
 module.exports = router
