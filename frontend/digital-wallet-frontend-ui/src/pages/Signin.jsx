@@ -31,6 +31,8 @@ function Signin() {
       // console.log(response);
       // set the token in the localStorage, if exists then replace the token 
       localStorage.setItem("PaytmToken",response.data.token);
+      // Store the first letter of the username
+      localStorage.setItem("firstLetter",username.current.value[0]);
       // store the response as an object in the state variable
       setStore(response.data);
       // redirect to the "/dashboard" page when all the goes right
