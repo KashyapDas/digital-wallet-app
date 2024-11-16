@@ -35,7 +35,8 @@ router.post("/transfer-money",transferMiddleware,async(req,res)=>{
         // abort the session and then return a response corresponding to that
         await session.abortTransaction();
         return res.json({
-            msg:"Insufficent amount"
+            msg:"Insufficent amount",
+            result: false
         })
     }
     // find the receiver account
@@ -46,7 +47,8 @@ router.post("/transfer-money",transferMiddleware,async(req,res)=>{
     {
         await session.abortTransaction();
         return res.json({
-            msg:"Invalid account"
+            msg:"Invalid account",
+            result:false
         });
     }
     // Perform the transcation from one to another
@@ -69,7 +71,8 @@ router.post("/transfer-money",transferMiddleware,async(req,res)=>{
     // Terminate the session
     await session.commitTransaction();
     res.json({
-        msg:"Transfer successfully..."
+        msg:"Transfer successfully...",
+        result:true
     });
 })
 

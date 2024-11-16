@@ -13,8 +13,8 @@ router.post("/signup",userMiddleware, async (req,res)=>{
     if(!success)
     {
         return res.status(403).json({
-            msg:"Invalid Input"
-            // msg:success
+            msg:"Invalid Input",
+            result:false
         })
     }
     // If the validation not goes wrong then check weather the user already exist or not.
@@ -26,6 +26,7 @@ router.post("/signup",userMiddleware, async (req,res)=>{
         email : req.body.email,
         password : req.body.password,
     })
+    console.log(newUser)
     // create a jwt token for the user
     const userId = newUser._id; 
 
@@ -41,7 +42,8 @@ router.post("/signup",userMiddleware, async (req,res)=>{
     // pass the token in the response set
     res.json({
         msg:"Account created successfully...",
-        token
+        token,
+        result:true
     })
 })
 
@@ -64,7 +66,8 @@ router.post("/signin",signinMiddleware,(req,res)=>{
     
     res.json({
         msg:"Navigate to the dashboard page",
-        token
+        token,
+        result:true
     })
 })
 
@@ -108,16 +111,37 @@ router.put("/forgotPassword", async (req,res)=>{
 
 // This is allow the feature of filtering the user based on their username  
 router.get("/getAllUsers",async (req,res)=>{
+    // get the token and fetched the userid if both the id same then avoid the user to find
+    const authToken = req.headers.authorization;
+    const verifiedToken = jwt.verify(authToken,jwt_secret);
     // search was based on the username
-    const filterUsername = req.query.filter || "";
+    const filterUsername = req.query.filter;
 
-    // Display all those user which contain the letters of filterUSername
+    // Display all those user which contain the letters of filterUSername but don't call if the string is empty
+    if(filterUsername<=0)
+    {   
+        return res.json({
+            msg:"User Not Found",
+            list:""
+        })
+    }
+    // Here the user who login were not suppose to display on the user list as transfer can't occur between yourself
     const usernameExist = await userModel.find({
-        username : {
-            $regex : filterUsername
-        }
-    })
+        $and: [
+            {
+                username: {
+                    $regex: filterUsername,
+                }
+            },
+            {
+                _id: { 
+                    $ne: verifiedToken.userId  // Assuming currentUserId is the ID you want to exclude
+                }
+            }
+        ]
+    }).select('username firstname lastname _id');
     // Return all the user that exist with the search query
+    console.log(usernameExist);
     res.json({
         msg:"Users Found ",
         list : usernameExist
@@ -127,9 +151,18 @@ router.get("/getAllUsers",async (req,res)=>{
 router.post("/authRoute",async (req,res)=>{
     try{
         const authToken = req.headers.authorization;
-        console.log(authToken);
         const checkAuth = jwt.verify(authToken,jwt_secret);
-        console.log(checkAuth);  
+        // Check weather this userId is present or not
+        const isExits = await userModel.findOne({
+            _id : checkAuth.userId
+        });
+        if(!isExits)
+        {
+            return res.json({
+                msg:"User not exist",
+                prevent: true
+            })
+        }
         res.json({
             msg:"User exists",
             prevent: false
